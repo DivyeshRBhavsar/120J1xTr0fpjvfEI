@@ -11,7 +11,7 @@
 
 ---
 
-## 📖 The story in one paragraph
+## 📖 The Story in one paragraph
 
 A recruiter can glance at a one-line profile ("ms in data analytics, northeastern university, open to data roles") and form a judgment in seconds. That judgment is useful, but it lives in someone's head. It isn't written down anywhere, it doesn't scale to thousands of applicants, and nobody can audit it.
 
@@ -19,19 +19,8 @@ This project tries to capture that judgment. I built it in **three stages**, eac
 
 ---
 
-## 🗺️ The pipeline at a glance
+## 🗺️ The Pipeline at a glance
 
-```mermaid
-flowchart LR
-    A["📄 Raw candidate text<br/><i>headline / bio / title</i>"] --> B["🔍 Stage 1: Extraction<br/>Qwen2.5-3B-Instruct, few-shot<br/>→ structured JSON"]
-    B --> C["⚖️ Stratified split<br/>by job title<br/>70 / 15 / 15"]
-    C --> D["🧠 Stage 2: Fine-tuning<br/>QLoRA (4-bit NF4) + LoRA<br/>regression head → score"]
-    D --> E["💾 LoRA adapter<br/>+ trained score head"]
-    E --> F["📚 Stage 3a: RAG + FAISS"]
-    E --> G["📚 Stage 3b: RAG + ChromaDB"]
-    H["🆕 New candidate<br/>as JSON"] --> F & G
-    F & G --> I["✅ Final score<br/>+ nearest neighbours<br/>+ confidence flag"]
-```
 
 | # | Notebook | What it does |
 |---|---|---|
@@ -44,7 +33,7 @@ flowchart LR
 
 ## 🔍 Chapter 1: Teaching the machine to read
 
-**Notebook:** `01_extraction.ipynb`
+**Notebook:** `extraction-candidate-info_final.ipynb`
 
 Real candidate data is messy. One person writes *"HR Manager with 5 years experience"*. Another writes a run-on string of skills with no punctuation. A third writes *"Passionate about helping people"* and nothing else. Before any model can score these people, it needs them in a consistent shape.
 
@@ -84,7 +73,7 @@ The blank rates for experience and education are expected rather than a failure:
 
 ## 🧠 Chapter 2: Teaching the machine to judge
 
-**Notebook:** `02_fine_tuning.ipynb`
+**Notebook:** `fine-tuning-candidates_final.ipynb`
 
 Now each candidate is a clean JSON record with an HR-assigned **screening score from 0 to 100**. The question becomes: *can a model learn to predict that score from the profile alone?*
 
@@ -156,7 +145,7 @@ Location matters more than anything else, which is an important finding in itsel
 
 ## 📚 Chapter 3: Teaching the machine to know what it doesn't know
 
-**Notebooks:** `03a_rag_faiss.ipynb` and `03b_rag_chroma.ipynb`
+**Notebooks:** `03a_rag-faiss-system.ipynb` and `03b_rag-chroma-system.ipynb`
 
 A score on its own isn't something a recruiter can act on. They want to know *why* a candidate got 81, and *whether the model has seen anyone like this before*. That's what the retrieval layer adds.
 
@@ -256,21 +245,6 @@ This model learns to reproduce **historical HR screening judgments**, including 
 
 ---
 
-## 📁 Repository structure
-
-```
-candidate-ranking-system/
-├── notebooks/
-│   ├── 01_extraction.ipynb       # raw text → structured JSON
-│   ├── 02_fine_tuning.ipynb      # QLoRA fine-tune → screening score
-│   ├── 03a_rag_faiss.ipynb       # retrieval layer on FAISS
-│   └── 03b_rag_chroma.ipynb      # retrieval layer on ChromaDB
-├── data/
-│   └── README.md                 # schema + how to supply data
-├── requirements.txt
-├── .gitignore
-└── README.md
-```
 
 > **Data privacy:** the candidate dataset, the extracted JSON, and the vector indexes are derived from real people's profiles and are **not** included in this repository. `data/README.md` describes the expected schema so you can run the pipeline on your own data.
 
