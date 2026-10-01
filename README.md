@@ -276,7 +276,7 @@ The notebooks were built and run on **Kaggle GPUs**.
 | `screening_score` | float | HR-assigned score, 0–100 (training label) |
 
 **Trained adapter:** the LoRA adapter and regression head are published on Hugging Face at
-👉 [`<your-hf-username>/qwen2.5-3b-candidate-scorer-qlora`](https://huggingface.co/<your-hf-username>/qwen2.5-3b-candidate-scorer-qlora)
+👉 [`<your-hf-username>/qwen2.5-3b-candidate-scorer-qlora`](https://huggingface.co/DivyeshBhavsar10/qwen2.5-3b-candidate-scorer-qlora)
 
 ---
 
@@ -294,6 +294,6 @@ The notebooks were built and run on **Kaggle GPUs**.
 
 Built by **Divyesh Bhavsar**, a data scientist working across NLP, ML engineering, and data pipelines.
 
-[LinkedIn](https://www.linkedin.com/in/<your-profile>) · [Kaggle](https://www.kaggle.com/divyeshbhavsar) · [Hugging Face](https://huggingface.co/<your-hf-username>)
+[LinkedIn](https://www.linkedin.com/in/divyesh-bhavsar-aaaa98152) · [Kaggle](https://www.kaggle.com/divyeshbhavsar) · [Hugging Face](https://huggingface.co/DivyeshBhavsar10)
 
 *If this project was useful or interesting, a ⭐ is always appreciated.*
