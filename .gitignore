@@ -1,0 +1,14 @@
+# Data and model artifacts
+*.csv
+*.parquet
+*.safetensors
+*.bin
+adapter*/
+faiss_index*/
+
+# Environment
+venv/
+.venv/
+.env
+__pycache__/
+.ipynb_checkpoints/
