@@ -13,7 +13,7 @@
 
 ## 🏢 The problem: finding talent is still a manual craft
 
-This project started with a real business problem from a **talent sourcing and management company**, a firm whose job is to find talented people and place them with technology companies.
+This project started with a real business problem. **[Apziva](https://www.apziva.com)** brought in a client, a **talent sourcing and management company** whose job is to find talented people and place them with technology companies, and I developed the solution together with Apziva as an **AI Resident**.
 
 On paper, the work sounds simple: a client has a role, and the firm finds the right person for it. In practice, every placement depends on three hard questions:
 
@@ -28,6 +28,22 @@ The review step brings its own twist. After a careful look, the best candidate i
 Sourcing itself was already semi-automated, so the brief was clear about where to focus:
 
 > **Build a machine-learning pipeline that understands candidates, scores how well they fit, ranks them, and learns from the reviewers who use it.**
+
+---
+
+## 🤝 Built in collaboration with Apziva
+
+This was not a classroom exercise. **Apziva** secured the project from the client and framed the business problem, and I worked together with the Apziva team to develop the solution through its **AI Residency** program.
+
+The roles were clear:
+
+| | Contribution |
+|---|---|
+| **The client** | A talent sourcing and management company that provided the business need, the candidate data, and the screening scores used as training labels |
+| **Apziva** | Brought in the client, defined the project scope and requirements, and collaborated throughout development |
+| **Me (AI Resident)** | Designed and built the pipeline end to end: LLM-based extraction, QLoRA fine-tuning of the scoring model, the FAISS and ChromaDB retrieval layers, evaluation, and this write-up |
+
+Working on a real client problem shaped every decision in this repository. The goal was never just a good metric on a leaderboard. It was a system a recruiting team could actually trust, question, and use.
 
 ---
 
@@ -294,7 +310,7 @@ This model learns to reproduce **historical screening judgments**, including wha
 - **Label noise.** Identical profiles received different scores, which caps how accurate any model can be.
 - **Decision support, not decision-making.** The score, neighbours, and confidence flag are meant to help a human reviewer prioritize and question, never to reject a candidate automatically. That matches how the firm works: every candidate is still reviewed by a person.
 
-> **Data privacy:** the candidate dataset, the extracted JSON, and the vector indexes are derived from real people's profiles and are **not** included in this repository. The input schema below describes what the pipeline expects, so you can run it on your own data.
+> **Data privacy:** the candidate dataset was provided by the client through Apziva. It, the extracted JSON, and the vector indexes are derived from real people's profiles and are **not** included in this repository. The input schema below describes what the pipeline expects, so you can run it on your own data.
 
 ---
 
@@ -347,7 +363,9 @@ The fine-tuned adapter on Hugging Face is **Built with Qwen** and is distributed
 
 ## 👤 About
 
-Built by **Divyesh Bhavsar**, a data scientist working across NLP, ML engineering, and data pipelines.
+Built by **Divyesh Bhavsar**, a data scientist working across NLP, ML engineering, and data pipelines, as an AI Resident with **Apziva**.
+
+**Acknowledgements:** thank you to the Apziva team for bringing this real-world project to the residency and for the collaboration throughout development, and to the client for the business problem and data that made it possible.
 
 [LinkedIn](https://www.linkedin.com/in/divyesh-bhavsar-aaaa98152) · [Kaggle](https://www.kaggle.com/divyeshbhavsar) · [Hugging Face](https://huggingface.co/DivyeshBhavsar10)
 
