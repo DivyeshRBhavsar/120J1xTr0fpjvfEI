@@ -11,23 +11,56 @@
 
 ---
 
-## 📖 The Story in one paragraph
+## 🏢 The problem: finding talent is still a manual craft
 
-A recruiter can glance at a one-line profile ("ms in data analytics, northeastern university, open to data roles") and form a judgment in seconds. That judgment is useful, but it lives in someone's head. It isn't written down anywhere, it doesn't scale to thousands of applicants, and nobody can audit it.
+This project started with a real business problem from a **talent sourcing and management company**, a firm whose job is to find talented people and place them with technology companies.
 
-This project tries to capture that judgment. I built it in **three stages**, each in its own notebook. First the machine learns to **read** messy candidate text and turn it into structured JSON. Then it learns to **judge** by fine-tuning a language model to predict the screening score HR assigned. Finally it learns to **know when it's out of its depth**, using retrieval over past candidates to calibrate its scores, explain them, and flag the cases it shouldn't be trusted on.
+On paper, the work sounds simple: a client has a role, and the firm finds the right person for it. In practice, every placement depends on three hard questions:
+
+1. **What does the role really need?** Filling a position well means deeply understanding the client: what they're looking for, which skills matter, and what "good" looks like for them.
+2. **What makes a candidate shine for *this* role?** A strong data engineer and a strong HR coordinator stand out for completely different reasons. Recognizing fit takes experience.
+3. **Where are the right people?** Talented individuals are scattered and hard to find.
+
+Today, all of this runs on human effort. Recruiters search with keywords such as *"full-stack software engineer"*, *"engineering manager"* or *"aspiring human resources"*, and the keywords change with every new role. They then go through the resulting candidates one by one, and every profile has to be reviewed by hand to judge how good a fit it really is.
+
+The review step brings its own twist. After a careful look, the best candidate is often **not** the one at the top of the list. It might be the 7th. The firm wants to capture that signal: when a reviewer **stars** a candidate as the ideal fit for a role, the list should **re-rank itself** around that choice, so every review makes the next list smarter.
+
+Sourcing itself was already semi-automated, so the brief was clear about where to focus:
+
+> **Build a machine-learning pipeline that understands candidates, scores how well they fit, ranks them, and learns from the reviewers who use it.**
 
 ---
 
-## 🗺️ The Pipeline at a glance
+## 📖 How I approached it
 
+A recruiter can glance at a one-line profile ("ms in data analytics, northeastern university, open to data roles") and form a judgment in seconds. That judgment is the firm's most valuable asset, but it lives in people's heads. It isn't written down anywhere, it doesn't scale to thousands of applicants, and nobody can audit it.
+
+So I set out to capture it. I built the system in **three stages**, each in its own notebook, and each answering a different part of the brief:
+
+- First, the machine learns to **read**: messy candidate text becomes clean, structured JSON.
+- Then it learns to **judge**: a language model is fine-tuned to predict the screening score the firm's reviewers assigned.
+- Finally, it learns to **know when it's out of its depth**: retrieval over past candidates calibrates each score, explains it with real examples, and flags the cases a human should look at more closely.
+
+### From the brief to the build
+
+| What the firm needed | How this project answers it | Where |
+|---|---|---|
+| Understand candidates whose profiles are written in a hundred different ways | A few-shot LLM turns raw text into consistent fields; job titles are normalized so the same role always has the same name, which makes keyword matching reliable | Chapter 1 |
+| Recognize what makes a candidate a good fit | The model learns directly from the firm's own screening scores, absorbing the reviewers' judgment instead of hand-written rules | Chapter 2 |
+| Rank candidates by fitness | Every candidate gets a 0–100 fitness score; ranking quality is measured with Spearman correlation against the reviewers' order | Chapter 2 |
+| Reduce the cost of manual review | Each score comes with the most similar past candidates as evidence, plus a low-confidence flag that points reviewers to the cases that need them most | Chapter 3 |
+| Re-rank when a reviewer stars the ideal candidate | The retrieval layer's embedding space is the foundation for this feedback loop; it is the next stage on the roadmap | [Roadmap](#-roadmap-closing-the-loop-with-starring) |
+
+---
+
+## 🗺️ The pipeline at a glance
 
 | # | Notebook | What it does |
 |---|---|---|
-| 1 | [`01_extraction.ipynb`](notebooks/01_extraction.ipynb) | Turns raw candidate text into structured JSON with a few-shot LLM |
-| 2 | [`02_fine_tuning.ipynb`](notebooks/02_fine_tuning.ipynb) | QLoRA fine-tunes Qwen2.5-3B to predict the screening score |
-| 3a | [`03a_rag_faiss.ipynb`](notebooks/03a_rag_faiss.ipynb) | Retrieval layer on a FAISS index: blend, explain, flag |
-| 3b | [`03b_rag_chroma.ipynb`](notebooks/03b_rag_chroma.ipynb) | Same retrieval layer on ChromaDB, plus metadata filtering |
+| 1 | [`extraction-candidate-info_final.ipynb`](notebooks/extraction-candidate-info_final.ipynb) | Turns raw candidate text into structured JSON with a few-shot LLM |
+| 2 | [`fine-tuning-candidates_final.ipynb`](notebooks/fine-tuning-candidates_final.ipynb) | QLoRA fine-tunes Qwen2.5-3B to predict the screening score |
+| 3a | [`03a_rag-faiss-system.ipynb`](notebooks/03a_rag-faiss-system.ipynb) | Retrieval layer on a FAISS index: blend, explain, flag |
+| 3b | [`03b_rag-chroma-system.ipynb`](notebooks/03b_rag-chroma-system.ipynb) | Same retrieval layer on ChromaDB, plus metadata filtering |
 
 ---
 
@@ -35,7 +68,7 @@ This project tries to capture that judgment. I built it in **three stages**, eac
 
 **Notebook:** `extraction-candidate-info_final.ipynb`
 
-Real candidate data is messy. One person writes *"HR Manager with 5 years experience"*. Another writes a run-on string of skills with no punctuation. A third writes *"Passionate about helping people"* and nothing else. Before any model can score these people, it needs them in a consistent shape.
+Real candidate data is messy. One person writes *"HR Manager with 5 years experience"*. Another writes a run-on string of skills with no punctuation. A third writes *"Passionate about helping people"* and nothing else. Before any model can score these people, it needs them in a consistent shape. This is the first challenge from the brief in miniature: you can't judge fit until you understand who the candidate is.
 
 So the first thing I did was hand the problem to **Qwen2.5-3B-Instruct**, running locally, with a carefully written few-shot prompt that extracts four fields from every candidate:
 
@@ -48,7 +81,7 @@ So the first thing I did was hand the problem to **Qwen2.5-3B-Instruct**, runnin
 }
 ```
 
-The prompt does more than copy text. It **normalizes abbreviations** so equivalent roles collapse to one string ("HR" → "human resources", "SWE" → "software engineer"). When a student only names their field of study, it **infers the target role** they're pursuing. And it is explicitly told **never to invent** information that isn't in the text. Every value is lowercased so "Data Analyst" and "data analyst" can never become two different categories.
+The prompt does more than copy text. It **normalizes abbreviations** so equivalent roles collapse to one string ("HR" → "human resources", "SWE" → "software engineer"). This matters for a keyword-driven search: a search for "human resources" should find the people who wrote "HR". When a student only names their field of study, it **infers the target role** they're pursuing, which is exactly how an "aspiring human resources" candidate shows up. And it is explicitly told **never to invent** information that isn't in the text. Every value is lowercased so "Data Analyst" and "data analyst" can never become two different categories.
 
 **Making it fast and robust:**
 
@@ -75,7 +108,7 @@ The blank rates for experience and education are expected rather than a failure:
 
 **Notebook:** `fine-tuning-candidates_final.ipynb`
 
-Now each candidate is a clean JSON record with an HR-assigned **screening score from 0 to 100**. The question becomes: *can a model learn to predict that score from the profile alone?*
+Now each candidate is a clean JSON record with a reviewer-assigned **screening score from 0 to 100**. This is the second challenge from the brief, knowing what makes a candidate shine, turned into a learning problem: *can a model learn the reviewers' judgment from the profile alone?*
 
 ### Turning JSON into model input
 
@@ -119,13 +152,13 @@ The test set was never used for model selection, tuning, or early stopping. It w
 | TF-IDF + Ridge *(validation set, for reference)* | 22.91 | n/a | 0.322 |
 | **QLoRA Qwen2.5-3B (this project)** | **16.57** | **25.30** | **0.548** |
 
-The fine-tuned model **cuts the naive baseline's error by about 45%** and ranks candidates in substantially the same order HR did.
+The fine-tuned model **cuts the naive baseline's error by about 45%** and ranks candidates in substantially the same order the reviewers did. For a firm that works from ranked shortlists, that ranking agreement is the number that matters most.
 
 ### What the model actually learned
 
 I didn't want to stop at a number, so the notebook takes the model apart afterwards.
 
-**The labels are two-tiered.** HR scores cluster at 20–40 and 80–100, with **not one training candidate between 40 and 60**. HR wasn't grading on a smooth scale; they were effectively sorting candidates into "strong" and "weak". This explains the error profile: when the model picks the wrong tier, the miss is large. The worst 10% of test predictions account for **33.5% of all error**.
+**The labels are two-tiered.** Reviewer scores cluster at 20–40 and 80–100, with **not one training candidate between 40 and 60**. Reviewers weren't grading on a smooth scale; they were effectively sorting candidates into "strong" and "weak". This explains the error profile: when the model picks the wrong tier, the miss is large. The worst 10% of test predictions account for **33.5% of all error**.
 
 **Some disagreement is in the labels themselves.** Twenty identical input texts appear more than once in training with different scores. No model can beat that noise floor.
 
@@ -147,7 +180,7 @@ Location matters more than anything else, which is an important finding in itsel
 
 **Notebooks:** `03a_rag-faiss-system.ipynb` and `03b_rag-chroma-system.ipynb`
 
-A score on its own isn't something a recruiter can act on. They want to know *why* a candidate got 81, and *whether the model has seen anyone like this before*. That's what the retrieval layer adds.
+A score on its own isn't something a recruiter can act on. They want to know *why* a candidate got 81, and *whether the model has seen anyone like this before*. Remember that every candidate in this firm's process is still reviewed by a person. The goal of this stage is to make that review faster and better aimed, not to replace it.
 
 ### What "RAG" means for a regression model
 
@@ -172,6 +205,8 @@ I built the retrieval layer twice on purpose, to compare the trade-offs:
 | Persistence | Manual `write_index` + CSV | Automatic via `PersistentClient` |
 | Filtering | Not built in | `where=` filters, e.g. only retrieve neighbours with the same job title or location |
 | Best for | Raw speed, minimal dependencies | Production-style workflows with rich metadata |
+
+ChromaDB's metadata filtering maps naturally onto the firm's keyword-driven workflow: a search for "engineering manager" can restrict retrieval to neighbours with that same normalized title.
 
 Both indexes are built from the **training set only**. Validation and test candidates are only ever queries, never index members, so a candidate can never retrieve itself.
 
@@ -220,7 +255,23 @@ What comes back:
 }
 ```
 
+For a reviewer, that's a score, a reason, and a confidence level in one result.
+
 The notebooks also include a **what-if probe**: remove or change one field at a time and watch the score move. For this candidate, the full profile scores 79.5 from the regression head. Removing education or other skills barely changes it, but **removing location drops it to 62.5**. That's the feature-importance finding from Chapter 2, visible on a single person.
+
+---
+
+## 🔭 Roadmap: closing the loop with starring
+
+The brief's most interesting requirement is still ahead: **when a reviewer stars the ideal candidate, the list should re-rank itself.** This repository doesn't implement starring yet, but the retrieval layer was designed with it in mind.
+
+Because every candidate already lives in the model's own judgment space, a starred candidate can become an **anchor**. Re-ranking then means blending each candidate's model score with how close they sit to the starred ideal in that space, the same blending mechanism Chapter 3 already uses with past candidates. Each new star adds an anchor, so the ranking moves closer to what the reviewer actually wants with every review.
+
+Next steps on this path:
+
+- Store starred candidates per role, alongside the role's search keywords.
+- Re-rank the shortlist by combining model score and similarity to the starred anchors, with the blend weight tuned on historical review decisions.
+- Measure success by how quickly the reviewers' final choices rise toward the top of the list.
 
 ---
 
@@ -236,17 +287,14 @@ The notebooks also include a **what-if probe**: remove or change one field at a 
 
 ## ⚖️ Responsible use & limitations
 
-This model learns to reproduce **historical HR screening judgments**, including whatever patterns those judgments contained. A few things anyone using it should know:
+This model learns to reproduce **historical screening judgments**, including whatever patterns those judgments contained. A few things anyone using it should know:
 
 - **Location is the strongest signal.** The model relies on where a candidate is based more than on their role, experience, or education. That's a faithful reflection of the training labels, not a design choice. Location can act as a proxy for characteristics that must not influence hiring decisions, so this is the first thing I'd audit before any real-world use.
 - **Small, imbalanced data.** 1,266 candidates across 260 titles, with 240 titles having fewer than 5 examples. Predictions for rare roles rest on very little evidence.
 - **Label noise.** Identical profiles received different scores, which caps how accurate any model can be.
-- **Decision support, not decision-making.** The score, neighbours, and confidence flag are meant to help a human reviewer prioritize and question, never to reject a candidate automatically.
+- **Decision support, not decision-making.** The score, neighbours, and confidence flag are meant to help a human reviewer prioritize and question, never to reject a candidate automatically. That matches how the firm works: every candidate is still reviewed by a person.
 
----
-
-
-> **Data privacy:** the candidate dataset, the extracted JSON, and the vector indexes are derived from real people's profiles and are **not** included in this repository. `data/README.md` describes the expected schema so you can run the pipeline on your own data.
+> **Data privacy:** the candidate dataset, the extracted JSON, and the vector indexes are derived from real people's profiles and are **not** included in this repository. The input schema below describes what the pipeline expects, so you can run it on your own data.
 
 ---
 
@@ -259,7 +307,7 @@ The notebooks were built and run on **Kaggle GPUs**.
    pip install -U transformers peft accelerate datasets scikit-learn scipy "bitsandbytes>=0.46.1" torchao
    pip install faiss-cpu chromadb
    ```
-2. **Run the notebooks in order**: `01` → `02` → `03a` and/or `03b`. Restart the runtime after installing bitsandbytes.
+2. **Run the notebooks in order**: extraction → fine-tuning → `03a` and/or `03b`. Restart the runtime after installing bitsandbytes.
 3. **Supply your data** in the schema below, and update the paths in each notebook's config cell.
 
 **Input schema** (output of notebook 1, input to notebooks 2 and 3):
@@ -273,20 +321,27 @@ The notebooks were built and run on **Kaggle GPUs**.
 | `education` | str \| null | Degree / institution |
 | `other_info` | str \| null | Skills, certifications, employer |
 | `location` | str \| null | Candidate location |
-| `screening_score` | float | HR-assigned score, 0–100 (training label) |
+| `screening_score` | float | Reviewer-assigned score, 0–100 (training label) |
 
 **Trained adapter:** the LoRA adapter and regression head are published on Hugging Face at
-👉 [`<your-hf-username>/qwen2.5-3b-candidate-scorer-qlora`](https://huggingface.co/DivyeshBhavsar10/qwen2.5-3b-candidate-scorer-qlora)
+👉 [`DivyeshBhavsar10/qwen2.5-3b-candidate-scorer-qlora`](https://huggingface.co/DivyeshBhavsar10/qwen2.5-3b-candidate-scorer-qlora)
 
 ---
 
 ## 🛠️ Tech stack
 
-**Models:** Qwen2.5-3B-Instruct (extraction and fine-tuning base)
+**Models:** Qwen2.5-3B-Instruct (extraction and fine-tuning base), **Built with Qwen**
 **Fine-tuning:** Hugging Face Transformers, PEFT (LoRA), bitsandbytes (4-bit NF4 QLoRA)
 **Retrieval:** FAISS, ChromaDB
 **Evaluation:** scikit-learn, SciPy (MAE, RMSE, Spearman, permutation importance)
 **Compute:** Kaggle GPU notebooks
+
+---
+
+## 📄 License
+
+The code in this repository is released under the MIT License.
+The fine-tuned adapter on Hugging Face is **Built with Qwen** and is distributed under the [Qwen Research License Agreement](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct/blob/main/LICENSE).
 
 ---
 
