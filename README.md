@@ -170,6 +170,17 @@ The test set was never used for model selection, tuning, or early stopping. It w
 
 The fine-tuned model **cuts the naive baseline's error by about 45%** and ranks candidates in substantially the same order the reviewers did. For a firm that works from ranked shortlists, that ranking agreement is the number that matters most.
 
+### Reading these numbers honestly
+
+An MAE of 16.6 points and a Spearman ρ of 0.548 are a clear improvement over the baselines, but they are not production-grade accuracy, and the main reason is data:
+
+- **Limited training data.** The model learned from only 886 training examples spread across 260 job titles, so most titles contribute just a handful of examples. A 3B model can extract a lot from little data, but not a reliable standard for every role.
+- **Sparse inputs.** Many profiles are a single line, and experience and education are missing for roughly half of all candidates. The model often has very little to go on.
+- **Two-tier, noisy labels.** With scores clustered at 20–40 and 80–100, a single wrong-tier prediction adds 40+ points of error. Identical profiles with different scores also set a floor no model can get below.
+- **A small test set.** With 190 test candidates, the metrics themselves carry uncertainty. A Spearman ρ of 0.548 on 190 samples is consistent with a true value somewhere around 0.44–0.64.
+
+The most direct path to better numbers is more labeled data, especially for under-represented roles, followed by richer candidate profiles. The pipeline itself doesn't need to change to benefit from either.
+
 ### What the model actually learned
 
 I didn't want to stop at a number, so the notebook takes the model apart afterwards.
@@ -306,7 +317,7 @@ Next steps on this path:
 This model learns to reproduce **historical screening judgments**, including whatever patterns those judgments contained. A few things anyone using it should know:
 
 - **Location is the strongest signal.** The model relies on where a candidate is based more than on their role, experience, or education. That's a faithful reflection of the training labels, not a design choice. Location can act as a proxy for characteristics that must not influence hiring decisions, so this is the first thing I'd audit before any real-world use.
-- **Small, imbalanced data.** 1,266 candidates across 260 titles, with 240 titles having fewer than 5 examples. Predictions for rare roles rest on very little evidence.
+- **Small, imbalanced data.** 1,266 candidates across 260 titles, with 240 titles having fewer than 5 examples. This is the main reason test performance sits at an MAE of about 16.6 and a Spearman ρ of 0.548 (see [Reading these numbers honestly](#reading-these-numbers-honestly)), and predictions for rare roles rest on very little evidence.
 - **Label noise.** Identical profiles received different scores, which caps how accurate any model can be.
 - **Decision support, not decision-making.** The score, neighbours, and confidence flag are meant to help a human reviewer prioritize and question, never to reject a candidate automatically. That matches how the firm works: every candidate is still reviewed by a person.
 
