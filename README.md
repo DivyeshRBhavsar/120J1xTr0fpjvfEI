@@ -73,16 +73,16 @@ So I set out to capture it. I built the system in **three stages**, each in its 
 
 | # | Notebook | What it does |
 |---|---|---|
-| 1 | [`extraction-candidate-info_final.ipynb`](notebooks/extraction-candidate-info_final.ipynb) | Turns raw candidate text into structured JSON with a few-shot LLM |
+| 1 | [`extraction-candidate-Info_final.ipynb`](notebooks/extraction-candidate-Info_final.ipynb) | Turns raw candidate text into structured JSON with a few-shot LLM |
 | 2 | [`fine-tuning-candidates_final.ipynb`](notebooks/fine-tuning-candidates_final.ipynb) | QLoRA fine-tunes Qwen2.5-3B to predict the screening score |
-| 3a | [`03a_rag-faiss-system.ipynb`](notebooks/03a_rag-faiss-system.ipynb) | Retrieval layer on a FAISS index: blend, explain, flag |
-| 3b | [`03b_rag-chroma-system.ipynb`](notebooks/03b_rag-chroma-system.ipynb) | Same retrieval layer on ChromaDB, plus metadata filtering |
+| 3a | [`rag-faiss-system.ipynb`](notebooks/rag-faiss-system.ipynb) | Retrieval layer on a FAISS index: blend, explain, flag |
+| 3b | [`rag-chroma-system.ipynb`](notebooks/rag-chroma-system.ipynb) | Same retrieval layer on ChromaDB, plus metadata filtering |
 
 ---
 
 ## 🔍 Chapter 1: Teaching the machine to read
 
-**Notebook:** `extraction-candidate-info_final.ipynb`
+**Notebook:** `extraction-candidate-Info_final.ipynb`
 
 Real candidate data is messy. One person writes *"HR Manager with 5 years experience"*. Another writes a run-on string of skills with no punctuation. A third writes *"Passionate about helping people"* and nothing else. Before any model can score these people, it needs them in a consistent shape. This is the first challenge from the brief in miniature: you can't judge fit until you understand who the candidate is.
 
@@ -205,7 +205,7 @@ Location matters more than anything else, which is an important finding in itsel
 
 ## 📚 Chapter 3: Teaching the machine to know what it doesn't know
 
-**Notebooks:** `03a_rag-faiss-system.ipynb` and `03b_rag-chroma-system.ipynb`
+**Notebooks:** `rag-faiss-system.ipynb` and `rag-chroma-system.ipynb`
 
 A score on its own isn't something a recruiter can act on. They want to know *why* a candidate got 81, and *whether the model has seen anyone like this before*. Remember that every candidate in this firm's process is still reviewed by a person. The goal of this stage is to make that review faster and better aimed, not to replace it.
 
